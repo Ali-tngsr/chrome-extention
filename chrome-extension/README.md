@@ -1,129 +1,49 @@
 # New Tab Dashboard — Chrome Extension
 
-A beautiful, minimal, production-ready **New Tab** replacement for Chrome (Manifest V3).
-It turns every new tab into a fast, elegant productivity dashboard focused on quick
-website access — inspired by Arc, Linear, Raycast, Vercel and Notion.
+A beautiful, minimal, production-ready Chrome Extension (Manifest V3) that replaces Chrome's New Tab page with a modern productivity dashboard.
 
-![accent](https://img.shields.io/badge/accent-5E81F4-5E81F4) ![manifest](https://img.shields.io/badge/manifest-v3-success) ![react](https://img.shields.io/badge/react-18-61dafb) ![vite](https://img.shields.io/badge/vite-5-646cff)
+This is the **standalone Chrome Extension** version, built with Vite + React + TypeScript.
 
 ---
 
 ## ✨ Features
 
-- **Command-style search bar** — Google search + smart URL detection. Type `github`
-  → opens `https://github.com`. Type a query → Google search. Live suggestions
-  (matching shortcuts + recent items), arrow-key navigation.
-- **Unlimited categories** — Development, AI, Work, Research, Reading, … Each is a
-  beautiful expandable card with a Lucide icon and optional accent color.
-- **Website shortcuts** — favicon-powered tiles in a responsive grid. Drag & drop
-  reordering, add / edit / delete / duplicate, move between categories.
-- **Context menu** — right-click any shortcut for Edit, Delete, Duplicate, Move.
-- **Collapsible sidebar** — Dashboard, All Categories, Settings, Import, Export +
-  live stats.
-- **Settings** — Dark / Light / System theme, 8 accent presets + custom color,
-  card radius slider, grid density, columns per row, animations on/off, clock toggle.
-- **Import / Export** — full JSON backup & restore.
-- **Keyboard shortcuts** — `/` focus search, `Ctrl/⌘+K` command search, `Esc` close,
-  arrow keys navigate results, `g d / g c / g s` switch views.
-- **Synced storage** — everything saved to `chrome.storage.sync` so it follows you
-  across signed-in Chrome instances.
-- **Premium visuals** — soft shadows, glass blur, ambient aurora glow, 200ms
-  micro-interactions, custom scrollbars, fully responsive (laptop → ultrawide).
+- **Search bar** — Google search + URL detection + live suggestions
+- **Categories** — unlimited, drag & drop reordering, expand/collapse
+- **Shortcuts** — favicon (multi-provider fallback), context menu (Edit/Delete/Duplicate/Move), drag & drop reorder
+- **Quick Launch** — configurable site chips under the search bar (add/remove in Settings)
+- **Insights** — usage analytics (most-opened ranking + recent activity)
+- **Settings** — theme (dark/light/system), accent color, card radius, grid density, columns, animations, clock format, background style, glass intensity, Import/Export, keyboard shortcuts reference
+- **Keyboard shortcuts** — `/`, `n`, `c`, `?`, `g d/s`, `Ctrl+,`
+- **Storage** — `chrome.storage.sync` (syncs across devices)
 
 ---
 
-## 🧱 Tech Stack
+## 🚀 Build & Install
 
-| Layer        | Choice                          |
-| ------------ | ------------------------------- |
-| Framework    | React 18 + TypeScript           |
-| Build tool   | Vite 5                          |
-| Styling      | TailwindCSS 3                   |
-| State        | Zustand (persisted)             |
-| Animations   | Framer Motion                   |
-| Icons        | Lucide React                    |
-| Drag & drop  | @dnd-kit                        |
-| Storage      | `chrome.storage.sync` (MV3)     |
-| Manifest     | Chrome Extension Manifest V3    |
+### Prerequisites
+- [Node.js](https://nodejs.org/) 18+
+- npm
 
----
+### Build
 
-## 📁 Folder Structure
-
-```
-chrome-extension/
-├── manifest.json              # MV3 manifest (newtab override + storage permission)
-├── package.json
-├── vite.config.ts             # multi-page build (newtab.html)
-├── tailwind.config.js
-├── postcss.config.js
-├── tsconfig.json
-├── newtab.html                # the page rendered for every new tab
-├── index.html                 # placeholder (redirects to newtab)
-├── public/
-│   └── icons/                 # 16/48/128 PNG icons
-├── scripts/
-│   └── gen-icons.cjs          # regenerate icons from SVG
-└── src/
-    ├── main.tsx               # entry point
-    ├── NewTabApp.tsx          # app shell + view routing
-    ├── index.css              # Tailwind + theme tokens
-    ├── types/index.ts         # Category, Shortcut, Settings, ...
-    ├── lib/
-    │   ├── storage.ts         # chrome.storage.sync adapter
-    │   ├── url.ts             # URL detection + favicon helpers
-    │   └── search-focus.ts    # global focus registry
-    ├── store/useStore.ts      # Zustand store (persisted)
-    ├── hooks/
-    │   ├── useTheme.ts        # applies theme/accent/radius/density
-    │   └── useKeyboardShortcuts.ts
-    └── components/
-        ├── Sidebar.tsx
-        ├── SearchBar.tsx
-        ├── Greeting.tsx
-        ├── CategoryCard.tsx
-        ├── ShortcutGrid.tsx
-        ├── ShortcutTile.tsx
-        ├── ContextMenu.tsx
-        ├── SettingsPanel.tsx
-        ├── IconMap.tsx
-        └── dialogs/
-            ├── _Dialog.tsx           # shared dialog primitives
-            ├── ShortcutDialog.tsx
-            ├── CategoryDialog.tsx
-            └── ImportExportDialog.tsx
+```bash
+cd chrome-extension
+npm install
+npm run build
 ```
 
----
+This produces a `dist/` folder containing `manifest.json`, `newtab.html`, assets, and icons.
 
-## 🚀 Installation (Load Unpacked)
+> **Note:** The build script uses `shx cp` (cross-platform) to copy `manifest.json` into `dist/`. This works on Windows, macOS, and Linux.
 
-1. **Build the extension**
+### Install in Chrome
 
-   ```bash
-   cd chrome-extension
-   npm install
-   npm run build
-   ```
-
-   This produces a `dist/` folder containing `manifest.json`, `newtab.html`,
-   `assets/` and `icons/`.
-
-2. **Open Chrome extensions**
-
-   Navigate to `chrome://extensions` in Chrome (or any Chromium browser:
-   Edge `edge://extensions`, Brave `brave://extensions`).
-
-3. **Enable Developer mode** (top-right toggle).
-
-4. **Load unpacked**
-
-   Click **“Load unpacked”** and select the `chrome-extension/dist` folder.
-
-5. **Open a new tab** — your dashboard appears. 🎉
-
-> During development you can run `npm run dev` for hot-reload, but the
-> new-tab override only applies to the built `dist/` loaded into Chrome.
+1. Open `chrome://extensions` in Chrome
+2. Enable **Developer mode** (top-right toggle)
+3. Click **"Load unpacked"**
+4. Select the `dist/` folder
+5. Open a new tab — your dashboard appears 🎉
 
 ---
 
@@ -136,7 +56,7 @@ npm run build    # type-check + production build → dist/
 npm run lint     # tsc --noEmit
 ```
 
-Regenerate icons:
+### Regenerate icons
 
 ```bash
 node scripts/gen-icons.cjs
@@ -146,60 +66,55 @@ node scripts/gen-icons.cjs
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut       | Action                          |
-| -------------- | ------------------------------- |
-| `/`            | Focus the search bar            |
-| `Ctrl/⌘ + K`   | Open / focus search (command)   |
-| `↑` / `↓`      | Navigate search suggestions     |
-| `Enter`        | Open selected result            |
-| `Esc`          | Close dialog / blur search      |
-| `g` then `d`   | Go to Dashboard                 |
-| `g` then `c`   | Go to All Categories            |
-| `g` then `s`   | Go to Settings                  |
+| Shortcut     | Action                  |
+| ------------ | ----------------------- |
+| `/`          | Focus search            |
+| `Enter`      | Open selected result    |
+| `Esc`        | Close dialog            |
+| `n`          | New shortcut            |
+| `c`          | New category            |
+| `?`          | Show shortcuts help     |
+| `g` then `d` | Go to dashboard         |
+| `g` then `s` | Go to settings          |
+| `Ctrl + ,`   | Go to settings          |
 
 ---
 
-## 🎨 Customization
+## 📁 Project Structure
 
-- **Theme**: Settings → Appearance → Light / Dark / System.
-- **Accent**: 8 presets or a custom hex color (live preview everywhere).
-- **Card radius**: 0.25rem → 2rem slider.
-- **Density**: Comfortable / Compact (tighter grid spacing).
-- **Columns**: 3 → 10 per row on desktop.
-- **Animations**: toggle all transitions globally.
-- **Per-category color**: edit a category to give it its own accent.
-
-All settings sync via `chrome.storage.sync`.
-
----
-
-## 📦 Import / Export
-
-Open the sidebar → **Export** to download a `newtab-backup-YYYY-MM-DD.json` file
-containing your categories, shortcuts and settings. Use **Import** to restore from
-a file or pasted JSON.
+```
+chrome-extension/
+├── manifest.json              # MV3 manifest
+├── newtab.html                # New Tab page entry
+├── index.html                 # placeholder
+├── package.json
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+├── public/icons/              # 16/48/128 PNG icons
+├── scripts/gen-icons.cjs      # regenerate icons
+└── src/
+    ├── main.tsx               # entry point
+    ├── index.css              # Tailwind 3 + theme tokens
+    ├── types/newtab.ts
+    ├── lib/                   # storage, url, search-focus, utils
+    ├── store/newtab-store.ts  # Zustand (persisted)
+    ├── hooks/                 # use-keyboard-shortcuts, use-newtab-theme
+    └── components/
+        ├── newtab/            # all dashboard components
+        └── ui/                # shadcn/ui components
+```
 
 ---
 
 ## 🔒 Permissions
 
-| Permission | Why                                      |
-| ---------- | ---------------------------------------- |
-| `storage`  | Persist & sync your dashboard data       |
+| Permission | Why |
+| ---------- | --- |
+| `storage`  | Persist & sync dashboard data |
 
-No host permissions, no network calls, no tracking. Favicons are loaded via
-Google’s public favicon service.
-
----
-
-## 🌐 Live Web Preview
-
-A feature-identical preview is also rendered by the host Next.js app at `/` so you
-can try the dashboard in a normal browser tab. In that preview, `chrome.storage.sync`
-falls back to `localStorage` automatically.
-
----
+No host permissions, no tracking.
 
 ## 📄 License
 
-MIT — use it, fork it, ship it.
+MIT
