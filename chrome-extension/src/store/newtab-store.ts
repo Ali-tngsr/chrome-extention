@@ -1,3 +1,5 @@
+"use client";
+
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { v4 as uuid } from "uuid";
@@ -7,13 +9,13 @@ import type {
   Settings,
   ViewKey,
   NewTabData,
-  AccentPreset,
-} from "@/types";
+  QuickSite,
+} from "@/types/newtab";
 import { chromeStorageAdapter } from "@/lib/storage";
 
 const STORAGE_KEY = "newtab-store-v1";
 
-export const ACCENT_PRESETS: AccentPreset[] = [
+export const ACCENT_PRESETS: { name: string; value: string }[] = [
   { name: "Iris", value: "#5e81f4" },
   { name: "Azure", value: "#38bdf8" },
   { name: "Emerald", value: "#10b981" },
@@ -31,7 +33,28 @@ export const DEFAULT_SETTINGS: Settings = {
   density: "comfortable",
   animations: true,
   showClock: true,
+  clockFormat: "12h",
+  showSeconds: false,
   columns: 6,
+  searchEngine: "google",
+  customSearchTemplate: "https://duckduckgo.com/?q={q}",
+  customSearchName: "Custom",
+  background: "aurora",
+  showFavoritesBar: true,
+  expandAll: false,
+  glassIntensity: 70,
+  userName: "",
+  quickLaunchSites: [
+    { title: "YouTube", url: "https://youtube.com" },
+    { title: "Gmail", url: "https://mail.google.com" },
+    { title: "GitHub", url: "https://github.com" },
+    { title: "Maps", url: "https://maps.google.com" },
+    { title: "Translate", url: "https://translate.google.com" },
+    { title: "Drive", url: "https://drive.google.com" },
+    { title: "Calendar", url: "https://calendar.google.com" },
+    { title: "Wikipedia", url: "https://wikipedia.org" },
+  ],
+  showQuickLaunch: true,
 };
 
 function seedCategories(): Category[] {
@@ -98,17 +121,6 @@ interface NewTabState {
   expandedCategoryId: string | null;
   searchOpen: boolean;
   activeShortcutId: string | null;
-  // dialog state (not persisted)
-  shortcutDialog: { open: boolean; editId: string | null; categoryId?: string };
-  categoryDialog: { open: boolean; editId: string | null };
-  importExportDialog: { open: boolean; mode: "import" | "export" };
-  contextMenu: {
-    open: boolean;
-    x: number;
-    y: number;
-    shortcutId: string | null;
-  };
-
   // actions
   setView: (v: ViewKey) => void;
   toggleSidebar: () => void;
@@ -116,14 +128,6 @@ interface NewTabState {
   setExpandedCategory: (id: string | null) => void;
   setSearchOpen: (v: boolean) => void;
   setActiveShortcut: (id: string | null) => void;
-  openShortcutDialog: (editId: string | null, categoryId?: string) => void;
-  closeShortcutDialog: () => void;
-  openCategoryDialog: (editId: string | null) => void;
-  closeCategoryDialog: () => void;
-  openImportExport: (mode: "import" | "export") => void;
-  closeImportExport: () => void;
-  openContextMenu: (x: number, y: number, shortcutId: string) => void;
-  closeContextMenu: () => void;
 
   addCategory: (data: Pick<Category, "name" | "icon" | "color">) => string;
   updateCategory: (id: string, patch: Partial<Category>) => void;
@@ -138,8 +142,15 @@ interface NewTabState {
   duplicateShortcut: (id: string) => void;
   moveShortcut: (id: string, targetCategoryId: string) => void;
   reorderShortcuts: (categoryId: string, orderedIds: string[]) => void;
+  recordShortcutOpen: (id: string) => void;
+  bulkMoveShortcuts: (ids: string[], targetCategoryId: string) => void;
+  bulkDeleteShortcuts: (ids: string[]) => void;
+
+  toggleCategoryCollapse: (id: string) => void;
 
   updateSettings: (patch: Partial<Settings>) => void;
+  addQuickLaunchSite: (site: QuickSite) => void;
+  removeQuickLaunchSite: (index: number) => void;
   resetAll: () => void;
   importData: (data: NewTabData) => void;
   exportData: () => NewTabData;
@@ -149,7 +160,7 @@ function nextOrder<T extends { order: number }>(items: T[]): number {
   return items.reduce((max, i) => Math.max(max, i.order), -1) + 1;
 }
 
-export const useStore = create<NewTabState>()(
+export const useNewTabStore = create<NewTabState>()(
   persist(
     (set, get) => ({
       categories: seedCategories(),
@@ -160,10 +171,6 @@ export const useStore = create<NewTabState>()(
       expandedCategoryId: null,
       searchOpen: false,
       activeShortcutId: null,
-      shortcutDialog: { open: false, editId: null },
-      categoryDialog: { open: false, editId: null },
-      importExportDialog: { open: false, mode: "export" },
-      contextMenu: { open: false, x: 0, y: 0, shortcutId: null },
 
       setView: (v) => set({ view: v }),
       toggleSidebar: () =>
@@ -171,27 +178,11 @@ export const useStore = create<NewTabState>()(
       setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
       setExpandedCategory: (id) =>
         set((s) => ({
-          expandedCategoryId: s.expandedCategoryId === id ? null : id,
+          expandedCategoryId:
+            s.expandedCategoryId === id ? null : id,
         })),
       setSearchOpen: (v) => set({ searchOpen: v }),
       setActiveShortcut: (id) => set({ activeShortcutId: id }),
-
-      openShortcutDialog: (editId, categoryId) =>
-        set({ shortcutDialog: { open: true, editId, categoryId } }),
-      closeShortcutDialog: () =>
-        set({ shortcutDialog: { open: false, editId: null } }),
-      openCategoryDialog: (editId) =>
-        set({ categoryDialog: { open: true, editId } }),
-      closeCategoryDialog: () =>
-        set({ categoryDialog: { open: false, editId: null } }),
-      openImportExport: (mode) =>
-        set({ importExportDialog: { open: true, mode } }),
-      closeImportExport: () =>
-        set({ importExportDialog: { open: false, mode: "export" } }),
-      openContextMenu: (x, y, shortcutId) =>
-        set({ contextMenu: { open: true, x, y, shortcutId } }),
-      closeContextMenu: () =>
-        set((s) => ({ contextMenu: { ...s.contextMenu, open: false } })),
 
       addCategory: (data) => {
         const id = uuid();
@@ -225,10 +216,10 @@ export const useStore = create<NewTabState>()(
         set((s) => ({
           categories: orderedIds
             .map((id, i) => {
-              const c = s.categories.find((x) => x.id === id);
-              return c ? { ...c, order: i } : null;
+              const c = s.categories.find((x) => x.id === id)!;
+              return { ...c, order: i };
             })
-            .filter((c): c is Category => c !== null),
+            .filter(Boolean),
         })),
 
       addShortcut: (data) => {
@@ -299,11 +290,67 @@ export const useStore = create<NewTabState>()(
             return idx === -1 ? sc : { ...sc, order: idx };
           }),
         })),
+      recordShortcutOpen: (id) =>
+        set((s) => ({
+          shortcuts: s.shortcuts.map((sc) =>
+            sc.id === id
+              ? {
+                  ...sc,
+                  opens: (sc.opens || 0) + 1,
+                  lastOpened: Date.now(),
+                }
+              : sc
+          ),
+        })),
+      bulkMoveShortcuts: (ids, targetCategoryId) =>
+        set((s) => {
+          const idSet = new Set(ids);
+          let order = nextOrder(
+            s.shortcuts.filter((x) => x.categoryId === targetCategoryId)
+          );
+          return {
+            shortcuts: s.shortcuts.map((x) =>
+              idSet.has(x.id)
+                ? { ...x, categoryId: targetCategoryId, order: order++ }
+                : x
+            ),
+          };
+        }),
+      bulkDeleteShortcuts: (ids) =>
+        set((s) => {
+          const idSet = new Set(ids);
+          return { shortcuts: s.shortcuts.filter((sc) => !idSet.has(sc.id)) };
+        }),
+
+      toggleCategoryCollapse: (id) =>
+        set((s) => ({
+          categories: s.categories.map((c) =>
+            c.id === id ? { ...c, collapsed: c.collapsed === true ? false : true } : c
+          ),
+          expandedCategoryId:
+            s.expandedCategoryId === id ? null : s.expandedCategoryId,
+        })),
 
       updateSettings: (patch) =>
         set((s) => ({ settings: { ...s.settings, ...patch } })),
+      addQuickLaunchSite: (site) =>
+        set((s) => ({
+          settings: {
+            ...s.settings,
+            quickLaunchSites: [...s.settings.quickLaunchSites, site],
+          },
+        })),
+      removeQuickLaunchSite: (index) =>
+        set((s) => ({
+          settings: {
+            ...s.settings,
+            quickLaunchSites: s.settings.quickLaunchSites.filter(
+              (_, i) => i !== index
+            ),
+          },
+        })),
       resetAll: () =>
-        set(() => {
+        set((s) => {
           const cats = seedCategories();
           return {
             categories: cats,
@@ -328,11 +375,32 @@ export const useStore = create<NewTabState>()(
     {
       name: STORAGE_KEY,
       storage: createJSONStorage(() => chromeStorageAdapter),
+      version: 2,
+      // Migrate legacy persisted state.
+      // v0 (old adapter) was stored double-encoded: the raw value on disk
+      // was JSON.stringify(jsonString). createJSONStorage parses once, so
+      // `persistedState` arrives as a *string* that needs one more parse.
+      // v2 (new adapter) is stored clean, so persistedState is already an object.
+      migrate: (persistedState: unknown, version: number) => {
+        if (version < 2 && typeof persistedState === "string") {
+          try {
+            const inner = JSON.parse(persistedState) as {
+              state?: Partial<NewTabState>;
+            };
+            return (inner.state ?? inner) as Partial<NewTabState>;
+          } catch {
+            return {} as Partial<NewTabState>;
+          }
+        }
+        return persistedState as Partial<NewTabState>;
+      },
+      // Persist only data, not transient UI state
       partialize: (s) => ({
         categories: s.categories,
         shortcuts: s.shortcuts,
         settings: s.settings,
       }),
+      // Seed shortcuts only when no persisted data exists
       onRehydrateStorage: () => (state) => {
         if (state && state.shortcuts.length === 0) {
           state.shortcuts = seedShortcuts(state.categories);

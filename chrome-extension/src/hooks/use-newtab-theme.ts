@@ -1,12 +1,14 @@
+"use client";
+
 import { useEffect } from "react";
-import { useStore } from "@/store/useStore";
+import { useNewTabStore } from "@/store/newtab-store";
 
 /**
  * Applies theme (dark/light/system), accent color, card radius, density
  * and animation toggling to the New Tab root element + <html>.
  */
-export function useTheme(rootRef: React.RefObject<HTMLElement | null>) {
-  const settings = useStore((s) => s.settings);
+export function useApplyTheme(rootRef: React.RefObject<HTMLElement | null>) {
+  const settings = useNewTabStore((s) => s.settings);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -35,8 +37,8 @@ export function useTheme(rootRef: React.RefObject<HTMLElement | null>) {
     const rgb = hexToRgb(settings.accent);
     if (rgb) root.style.setProperty("--nt-accent-rgb", rgb.join(", "));
     root.style.setProperty("--nt-radius", `${settings.radius}rem`);
-    root.style.setProperty("--radius", `${settings.radius}rem`);
-  }, [settings.accent, settings.radius, rootRef]);
+    root.style.setProperty("--nt-glass", `${settings.glassIntensity}%`);
+  }, [settings.accent, settings.radius, settings.glassIntensity, rootRef]);
 
   useEffect(() => {
     const root = rootRef.current;

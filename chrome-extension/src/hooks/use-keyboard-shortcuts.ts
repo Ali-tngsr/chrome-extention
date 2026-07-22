@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect } from "react";
-import { useStore } from "@/store/useStore";
+import { useNewTabStore } from "@/store/newtab-store";
 import { focusSearch } from "@/lib/search-focus";
 
 function isTypingTarget(el: EventTarget | null): boolean {
@@ -15,14 +17,21 @@ function isTypingTarget(el: EventTarget | null): boolean {
 
 /**
  * Global keyboard shortcuts for the New Tab dashboard.
- *  /          → focus search
- *  Cmd/Ctrl+K → focus search (command-palette style)
- *  Esc        → blur search / handled per-dialog
- *  g then d/c/s → switch views (Dashboard / Categories / Settings)
+ *  /             → focus search
+ *  Cmd/Ctrl+,    → go to settings
+ *  Esc           → blur search / close (handled per-dialog)
+ *  g then d/s    → switch views (Dashboard / Settings)
+ *  n             → new shortcut
+ *  c             → new category (when not typing)
+ *  ?             → keyboard shortcuts help
  */
-export function useKeyboardShortcuts() {
-  const setView = useStore((s) => s.setView);
-  const setSearchOpen = useStore((s) => s.setSearchOpen);
+export function useKeyboardShortcuts(
+  onNewShortcut?: () => void,
+  onNewCategory?: () => void,
+  onHelp?: () => void
+) {
+  const setView = useNewTabStore((s) => s.setView);
+  const setSearchOpen = useNewTabStore((s) => s.setSearchOpen);
 
   useEffect(() => {
     let lastG = 0;
@@ -30,11 +39,10 @@ export function useKeyboardShortcuts() {
     const onKeyDown = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
 
-      // Cmd/Ctrl+K — always focus search
-      if (mod && e.key.toLowerCase() === "k") {
+      // Cmd/Ctrl+, — go to settings
+      if (mod && e.key === ",") {
         e.preventDefault();
-        setSearchOpen(true);
-        focusSearch();
+        setView("settings");
         return;
       }
 
@@ -48,7 +56,28 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // "g" then "d/c/s" to switch views (Linear-style)
+      // "n" creates a new shortcut
+      if (e.key.toLowerCase() === "n" && !mod) {
+        e.preventDefault();
+        onNewShortcut?.();
+        return;
+      }
+
+      // "c" creates a new category
+      if (e.key.toLowerCase() === "c" && !mod) {
+        e.preventDefault();
+        onNewCategory?.();
+        return;
+      }
+
+      // "?" opens the keyboard shortcuts help overlay
+      if (e.key === "?" && !mod) {
+        e.preventDefault();
+        onHelp?.();
+        return;
+      }
+
+      // "g" then "d/s" to switch views (Linear-style)
       if (e.key.toLowerCase() === "g" && !mod) {
         lastG = Date.now();
         return;
@@ -57,11 +86,6 @@ export function useKeyboardShortcuts() {
       if (withinG) {
         if (e.key.toLowerCase() === "d") {
           setView("dashboard");
-          lastG = 0;
-          return;
-        }
-        if (e.key.toLowerCase() === "c") {
-          setView("categories");
           lastG = 0;
           return;
         }
@@ -75,5 +99,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setView, setSearchOpen]);
+  }, [setView, setSearchOpen, onNewShortcut, onNewCategory, onHelp]);
 }
