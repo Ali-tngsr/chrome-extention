@@ -6,23 +6,26 @@
    New Tab Dashboard — Custom Theme System
    Dark: bg #0f1115 / cards #171a21 / accent configurable
    Light: clean neutrals
+
+   NOTE: theme variables are declared on :root (dark by default)
+   and :root:not(.dark) (light) — NOT on .nt-app — so that
+   Radix portals (dialogs, context menus, dropdowns) which render
+   at <body> level still inherit the correct colors.
    ============================================================ */
 
-.nt-app {
+:root {
   --nt-accent: #5e81f4;
   --nt-accent-rgb: 94, 129, 244;
   --nt-radius: 1rem;
   --radius: var(--nt-radius);
   --nt-gap: 1rem;
   --nt-glass: 70%;
-  color-scheme: light;
+  color-scheme: dark;
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
 
-.nt-app.dark {
-  color-scheme: dark;
+  /* dark theme (default) */
   --background: #0f1115;
   --foreground: #ffffff;
   --card: #171a21;
@@ -49,7 +52,9 @@
   --nt-elevated: rgba(255, 255, 255, 0.03);
 }
 
-.nt-app:not(.dark) {
+/* light theme — applied when <html> does NOT have .dark */
+:root:not(.dark) {
+  color-scheme: light;
   --background: #f6f7f9;
   --foreground: #0f1115;
   --card: #ffffff;
@@ -74,6 +79,18 @@
   --sidebar-accent: #f1f2f5;
   --sidebar-accent-foreground: #0f1115;
   --nt-elevated: rgba(15, 17, 21, 0.02);
+}
+
+.nt-app {
+  /* app-specific vars only; theme colors come from :root */
+}
+
+.nt-app.dark {
+  color-scheme: dark;
+}
+
+.nt-app:not(.dark) {
+  color-scheme: light;
 }
 
 .nt-app.density-compact {
